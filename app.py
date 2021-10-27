@@ -316,28 +316,28 @@ if submit_button:
     # worker_actfreq_UP ={'D1': []}  #Activation frequency upper bound for each day. It is disabled for now since between-activation interval and activation cost can replace it.
 
     # Lower bound for a certain type of workers per day. In some airports, there are a minimum number of a certain type workers available who must be employed.
-    FT_work_LB = [] if FT_work_LB >= 0 else FT_work_LB
-    P6_work_LB = [] if P6_work_LB >= 0 else P6_work_LB
-    P5_work_LB = [] if P5_work_LB >= 0 else P5_work_LB
-    P4_work_LB = [] if P4_work_LB >= 0 else P4_work_LB
+    FT_work_LB = [] if FT_work_LB == 0 else FT_work_LB
+    P6_work_LB = [] if P6_work_LB == 0 else P6_work_LB
+    P5_work_LB = [] if P5_work_LB == 0 else P5_work_LB
+    P4_work_LB = [] if P4_work_LB == 0 else P4_work_LB
     work_LB = {
-        "Full Time": [],
-        "Part Time 6": [],
-        "Part Time 5": [],
-        "Part Time 4": [],
+        "Full Time": FT_work_LB,
+        "Part Time 6": P6_work_LB,
+        "Part Time 5": P5_work_LB,
+        "Part Time 4": P4_work_LB,
     }
     # Full Time Workers include ['Full Time Day', 'Full Time Mix AM', 'Full Time Mix PM', 'Full Time Night AM', 'Full Time Night PM']
 
     # Specify the upper bound for each type of workers in total (e.g., no part time workers allowed. Full time only in HAV)
-    FT_work_UB = [] if FT_work_UB > 0 else FT_work_UB
-    P6_work_UB = [] if P6_work_UB > 0 else P6_work_UB
-    P5_work_UB = [] if P5_work_UB > 0 else P5_work_UB
-    P4_work_UB = [] if P4_work_UB > 0 else P4_work_UB
+    FT_work_UB = [] if FT_work_UB < 0 else FT_work_UB
+    P6_work_UB = [] if P6_work_UB < 0 else P6_work_UB
+    P5_work_UB = [] if P5_work_UB < 0 else P5_work_UB
+    P4_work_UB = [] if P4_work_UB < 0 else P4_work_UB
     work_UB = {
-        "Full Time": [],
-        "Part Time 6": [],
-        "Part Time 5": [],
-        "Part Time 4": [],  # Replace [] by entering the upper bound for each worker type per day
+        "Full Time": FT_work_UB,
+        "Part Time 6": P6_work_UB,
+        "Part Time 5": P5_work_UB,
+        "Part Time 4": P4_work_UB,  # Replace [] by entering the upper bound for each worker type per day
     }
 
     # When meal time requirement cannot be satisfied, we can run one of the following heuristic to adjust worker number or overstaffing:
