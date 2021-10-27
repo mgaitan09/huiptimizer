@@ -29,6 +29,36 @@ timee = form.time_input(
     "Select time to start:",
 )
 
+dayss = form.number_input("Select how many days to run:", min_value=1, value=1)
+
+resource = form.selectbox(
+    "Which Resource to process?",
+    options=[
+        "Total_Agente_SAP",
+        "Total_Supervisor_SAP",
+        # "Total_ECO",
+        # "Total_Agente_II_OPT",
+        # "Total_SAP_Agente_II",
+        # "Total_Connecting_Driver",
+        # "Total_PTY_Driver",
+        # "Total_Auditor_II",
+        # "Total_Auditor_I",
+    ],
+)
+
+expand = form.expander("Configure Lower and Upper Bounds:")
+
+col1, col2, col3, col4 = expand.columns(4)
+FT_work_UB = col1.number_input("Full Time Upper Bound", step=1, min_value=-1)
+P6_work_UB = col2.number_input("Part Time 6 Upper Bound", step=1, min_value=-1)
+P5_work_UB = col3.number_input("Part Time 5 Upper Bound", step=1, min_value=-1)
+P4_work_UB = col4.number_input("Part Time 4 Upper Bound", step=1, min_value=-1)
+
+FT_work_LB = col1.number_input("Full Time Lower Bound", step=1)
+P6_work_LB = col2.number_input("Part Time 6 Lower Bound", step=1)
+P5_work_LB = col3.number_input("Part Time 5 Lower Bound", step=1)
+P4_work_LB = col4.number_input("Part Time 4 Lower Bound", step=1)
+
 submit_button = form.form_submit_button(label="Run!")
 
 if submit_button:
@@ -55,11 +85,11 @@ if submit_button:
     # Input 1: data file to be read
     data_file = filename2  #'201203 MGA_1st_half2021_Bgt_Jun_Resource_Count.csv' #'Hui LIM TentativoCM 210725- RC.csv' #'Hui LIM Todo 210815- RC.csv' #'Hui LIM TentativoCM 210815- RC.csv' #'Hui LIM Tentativo3rd 210815- RC.csv' # 'Hui LIM Tentativo3rd 210725- RC.csv'
     file_df = pd.read_csv(data_file)
-
+    file_df = file_df.drop(file_df.columns[0], axis="columns")
     # Input 2: How many days to scheduel after the specified starting slot?
 
     start_time = f"{fdate} {timee}"  #'07/25/2021 0:00'  # '08/15/2021 0:00'  # Start scheduling from which date at what time
-    nday = 1  # Schedule for how many days since the start_time
+    nday = dayss  # Schedule for how many days since the start_time
 
     # Input 3: Airport productivity percentage:
     productivity = 0.657534246575342  # 0.673972602739726 #MIA #0.673972602739726 #JFK #0.632876712328767 #HAV # 0.589041095890411 #CCS # 0.657534246575342 #LIM # 0.754794520547945 #MGA  #0.652054794520548 #SCL  # FTE = sum(int(round(sum(workforce_model.n[k,t] for t in day_time)/productivity, 0))*work_salary[k] for k in work_type)
@@ -269,9 +299,10 @@ if submit_button:
             "salary": 4 / 8,
         },
     }
-    resource_type = file_df.columns[
-        2
-    ]  # What type of resources will be scheduled, agent, supervisor etc.
+
+    resource_type = (
+        resource  # What type of resources will be scheduled, agent, supervisor etc.
+    )
     # Input 5: Tuning parameters
     FTE_opt = 2  # weight for boosting the role FTE played in optimization
     NH_opt = 1  # weight for boosting the role NH played in optimization
@@ -285,10 +316,23 @@ if submit_button:
     # worker_actfreq_UP ={'D1': []}  #Activation frequency upper bound for each day. It is disabled for now since between-activation interval and activation cost can replace it.
 
     # Lower bound for a certain type of workers per day. In some airports, there are a minimum number of a certain type workers available who must be employed.
-    work_LB = {"Full Time": [], "Part Time 6": [], "Part Time 5": [], "Part Time 4": []}
+    FT_work_LB = [] if FT_work_LB >= 0 else FT_work_LB
+    P6_work_LB = [] if P6_work_LB >= 0 else P6_work_LB
+    P5_work_LB = [] if P5_work_LB >= 0 else P5_work_LB
+    P4_work_LB = [] if P4_work_LB >= 0 else P4_work_LB
+    work_LB = {
+        "Full Time": [],
+        "Part Time 6": [],
+        "Part Time 5": [],
+        "Part Time 4": [],
+    }
     # Full Time Workers include ['Full Time Day', 'Full Time Mix AM', 'Full Time Mix PM', 'Full Time Night AM', 'Full Time Night PM']
 
     # Specify the upper bound for each type of workers in total (e.g., no part time workers allowed. Full time only in HAV)
+    FT_work_UB = [] if FT_work_UB > 0 else FT_work_UB
+    P6_work_UB = [] if P6_work_UB > 0 else P6_work_UB
+    P5_work_UB = [] if P5_work_UB > 0 else P5_work_UB
+    P4_work_UB = [] if P4_work_UB > 0 else P4_work_UB
     work_UB = {
         "Full Time": [],
         "Part Time 6": [],
@@ -844,9 +888,10 @@ if submit_button:
     # name of csv file
     filename = "workforce_scheduling_results"
     fields = [
-        "Date and Time",
+        "Date",
         "Worker Type",
         "Staffs types and number to be activated at each time",
+        "Shift Start Time",
         "Total Workers",
         "NH",
         "FTE",
@@ -857,7 +902,10 @@ if submit_button:
     for t in day_time:
         for k in work_type:
             if workforce_model.n[k, t]() != 0.0:
-                rows.append([t, k, workforce_model.n[k, t]()])
+                fdate, timee = t.split(
+                    " ",
+                )
+                rows.append([fdate, k, workforce_model.n[k, t](), timee])
 
     rows[0].append(sum(workforce_model.n[k, t] for k in work_type for t in day_time)())
     rows[0].append(NH)
